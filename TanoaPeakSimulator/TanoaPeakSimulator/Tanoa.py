@@ -27,13 +27,14 @@ def main():
     # for chromosome in sequence_object_array:
     #     chromosome.small_bp_segment_list = get_random_base_pair_string_list(chromosome.bp_segment_arr, bp_length,
     #                                                                         bp_amount, chromosome.sequence)
-    chromosome = sequence_object_array[0]
-    get_random_base_pair_string(location_length, bp_length, chromosome.sequence, chromosome.bp_segment_arr)
+    chromosome = sequence_object_array[1]
+    for x in range(100):
+        get_random_base_pair_string(location_length, bp_length, chromosome.sequence, chromosome.bp_segment_arr)
+
     chromosome.small_bp_segment_list = get_random_base_pair_string_list(chromosome.bp_segment_arr, bp_length,
                                                                         bp_amount, chromosome.sequence)
 
-    for smallBP in sequence_object_array[0].small_bp_segment_list:
-        print(smallBP)
+    generate_output_files(chromosome)
 
 
 def get_random_base_pair_string(sequence_length, bp_length, sequence, array_of_segments):
@@ -55,6 +56,22 @@ def get_random_base_pair_string_list(list_of_bp_segments, bp_length, bp_amount, 
     return temp_bp_list
 
 
+def generate_output_files(chromosome):
+    output_to_file = ""
+    for x in chromosome.bp_segment_arr:
+        output_to_file += chromosome.chromosome_name + ":" + str(x.start_location) + "-" + str(x.end) + "\n"
+    output_file = open("sample_regions.txt", 'w')
+    output_file.write(output_to_file)
+    output_file.close()
+
+    random_regions = ""
+    for x in chromosome.small_bp_segment_list:
+        random_regions += x + "\n"
+    samples_file = open("small_base_pair_samples.txt", 'w')
+    samples_file.write(random_regions)
+    samples_file.close()
+
+
 class BasePairSegment:
     def __init__(self, start_int, sequence_string, sequence_length, bp_length):
         self.start_location = start_int
@@ -69,6 +86,7 @@ class Chromosome:
         self.sequence = sequence
         self.bp_segment_arr = []
         self.small_bp_segment_list = []
+        self.chromosome_name = header.split()[0]
 
 
 main()
