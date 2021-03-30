@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ignore big files
+*.fasta
+*.fasta.gz
+
+# ignore output files
+*.txt
