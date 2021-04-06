@@ -5,14 +5,16 @@ import random
 def main():
     location_length = 1000
     read_length = 100
-    num_reads = 200
-    num_enhancers = 50
+    num_reads = 50
+    num_enhancers = 3
     output_file_name = "sample_regions.txt"
-    samples_file_name = "small_base_pair_samples.txt"
+    samples_file_name = "reads.fasta"
     fasta_read_file_name = "dmel-all-chromosome-r6.38.fasta"
+    read_counts_file_name = "depth_data.txt"
 
     output_file = open(output_file_name, 'w')
     samples_file = open(samples_file_name, 'w')
+    read_counts_file = open(read_counts_file_name, 'w')
 
     read_number = 0
     with open(fasta_read_file_name, "r") as file:
@@ -21,13 +23,14 @@ def main():
         for line in file:
             if '>' in line:
                 chromosome = Chromosome(header, sequence)
+                read_counts_dict = {}
                 for x in range(num_enhancers):
                     get_random_base_pair_string(location_length, read_length, chromosome.sequence,
                                                 chromosome.enhancer_list)
                     chromosome.reads_list, read_number = get_random_base_pair_string_list(
                         chromosome.enhancer_list, read_length, num_reads,
-                        chromosome.sequence, chromosome.chromosome_name, read_number)
-                    generate_output_files(chromosome, output_file, samples_file)
+                        chromosome.sequence, chromosome.chromosome_name, read_number, read_counts_dict)
+                    generate_output_files(chromosome, output_file, samples_file, read_counts_file, read_counts_dict)
                 header = line
                 sequence = ""
             line = line.rstrip()
@@ -53,7 +56,7 @@ def get_random_base_pair_string(enhancer_region_length, read_length, sequence, a
     """
     if len(sequence) > (enhancer_region_length + read_length + 1):  # Ignore sequences that don't have enough length
         # to read from
-        min_pull_location =  read_length - 1  # minimum location at which a region
+        min_pull_location = read_length - 1  # minimum location at which a region
         # can be taken from to prevent out of bounds
         max_pull_location = len(sequence) - (enhancer_region_length + read_length)
         random_start_location = random.randrange(min_pull_location, max_pull_location)
@@ -68,9 +71,10 @@ def get_random_base_pair_string(enhancer_region_length, read_length, sequence, a
 
 
 def get_random_base_pair_string_list(list_of_bp_segments, read_length, num_reads,
-                                     original_sequence, chromosome, read_number):
+                                     original_sequence, chromosome, read_number, read_counts_dict):
     """
     Gets smaller reads from larger samples and returns them as a list
+    :param read_counts_dict: dictionary of position read and how many times that position has been read
     :param list_of_bp_segments: the larger samples, stored as an array in a chromosome object
     :param read_length: the length of one single read. Generally between 50-100bps in length
     :param num_reads: how many of these smaller reads you want to generate per larger sample
@@ -88,17 +92,24 @@ def get_random_base_pair_string_list(list_of_bp_segments, read_length, num_reads
             read_number += 1
             temp_bp_list.append(SingleRead(chromosome, random_start_location, random_start_location + read_length,
                                            sequence, read_number))
+            for z in range(random_start_location, random_start_location + read_length):
+                if z in read_counts_dict:
+                    read_counts_dict[z] += 1
+                else:
+                    read_counts_dict[z] = 1
             # adds them to this temp list, and returns this temp list. Which will be stored in a chromosome
             # as its reads_list. I should rename all of those to reads_list and the other thing to
             # samples list...
     return temp_bp_list, read_number
 
 
-def generate_output_files(chromosome, output_file, samples_file):
+def generate_output_files(chromosome, output_file, samples_file, read_counts_file, read_counts_dict):
     """
     generates output files from imported data. These are formatted as a sample_regions.txt file which
     hold the larger samples (where they start and end in the sequence for a chromosome) and also
     a small_base_pair_samples.txt which is just a list of all of the reads from larger samples.
+    :param read_counts_file: the file in which to write the read counts to
+    :param read_counts_dict: Dictionary with how many times a single location has been read
     :param chromosome: the chromosome object which stores a chromosome and its sequence
     :param output_file: the file in which to write the enhancer sequences to
     :param samples_file: the file to write the reads to (the shorter 50-100bp reads)
@@ -106,13 +117,18 @@ def generate_output_files(chromosome, output_file, samples_file):
     """
     output_to_file = ""
     for x in chromosome.enhancer_list:
-        output_to_file += chromosome.chromosome_name + ":" + str(x.start_location) + "-" + str(x.end) + "\n"
+        output_to_file += chromosome.chromosome_name[1:] + ":" + str(x.start_location) + "-" + str(x.end) + "\n"
     output_file.write(output_to_file)
 
     random_regions = ""
     for x in chromosome.reads_list:
         random_regions += x.output + "\n" + x.sequence + "\n"
     samples_file.write(random_regions)
+
+    read_counts_output = ""
+    for x in read_counts_dict.keys():
+        read_counts_output += chromosome.chromosome_name[1:] + "," + str(x) + "," + str(read_counts_dict[x]) + "\n"
+    read_counts_file.write(read_counts_output)
 
 
 class EnhancerRegion:
