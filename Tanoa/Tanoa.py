@@ -1,43 +1,41 @@
-import secrets
 import random
 
 
-def main():
-    location_length = 1000
-    read_length = 100
-    num_reads = 50
-    num_enhancers = 3
-    output_file_name = "sample_regions.txt"
-    samples_file_name = "reads.fasta"
-    fasta_read_file_name = "dmel-all-chromosome-r6.38.fasta"
-    read_counts_file_name = "depth_data.txt"
-
-    output_file = open(output_file_name, 'w')
-    samples_file = open(samples_file_name, 'w')
-    read_counts_file = open(read_counts_file_name, 'w')
-
-    read_number = 0
-    with open(fasta_read_file_name, "r") as file:
-        header = file.readline()
-        sequence = ""
-        for line in file:
-            if '>' in line:
-                chromosome = Chromosome(header, sequence)
-                read_counts_dict = {}
-                for x in range(num_enhancers):
-                    get_random_base_pair_string(location_length, read_length, chromosome.sequence,
-                                                chromosome.enhancer_list)
-                    chromosome.reads_list, read_number = get_random_base_pair_string_list(
-                        chromosome.enhancer_list, read_length, num_reads,
-                        chromosome.sequence, chromosome.chromosome_name, read_number, read_counts_dict)
-                    generate_output_files(chromosome, output_file, samples_file, read_counts_file, read_counts_dict)
-                header = line
-                sequence = ""
-            line = line.rstrip()
-            sequence += line
-
-    output_file.close()
-    samples_file.close()
+# def main():
+#     location_length = 1000
+#     read_length = 100
+#     num_reads = 50
+#     num_enhancers = 3
+#     output_file_name = "sample_regions.txt"
+#     samples_file_name = "reads.fasta"
+#     fasta_read_file_name = "dmel-all-chromosome-r6.38.fasta"
+#     read_counts_file_name = "depth_data.txt"
+#
+#     output_file = open(output_file_name, 'w')
+#     samples_file = open(samples_file_name, 'w')
+#     read_counts_file = open(read_counts_file_name, 'w')
+#     read_number = 0
+#     with open(fasta_read_file_name, "r") as file:
+#         header = file.readline()
+#         sequence = ""
+#         for line in file:
+#             if '>' in line:
+#                 chromosome = Chromosome(header, sequence)
+#                 read_counts_dict = {}
+#                 for x in range(num_enhancers):
+#                     get_random_base_pair_string(location_length, read_length, chromosome.sequence,
+#                                                 chromosome.enhancer_list)
+#                     chromosome.reads_list, read_number = get_random_base_pair_string_list(
+#                         chromosome.enhancer_list, read_length, num_reads,
+#                         chromosome.sequence, chromosome.chromosome_name, read_number, read_counts_dict)
+#                     generate_output_files(chromosome, output_file, samples_file, read_counts_file, read_counts_dict)
+#                 header = line
+#                 sequence = ""
+#             line = line.rstrip()
+#             sequence += line
+#
+#     output_file.close()
+#     samples_file.close()
 
 
 def get_random_base_pair_string(enhancer_region_length, read_length, sequence, array_of_segments):
