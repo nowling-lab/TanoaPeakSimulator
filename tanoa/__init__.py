@@ -86,7 +86,9 @@ def generate_output_files(chromosome, output_file, samples_file, read_counts_fil
     samples_file.write(random_regions)
 
     read_counts_output = ""
-    for x in read_counts_dict.keys():
+    list_of_keys = list(read_counts_dict.keys())
+    list_of_keys.sort()
+    for x in list_of_keys:
         read_counts_output += chromosome.chromosome_name[1:] + "," + str(x) + "," + str(read_counts_dict[x]) + "\n"
     read_counts_file.write(read_counts_output)
 

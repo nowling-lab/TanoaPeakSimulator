@@ -7,8 +7,7 @@ from tanoa import get_random_base_pair_string_list
 from tanoa import generate_output_files
 from tanoa import EnhancerRegion
 from tanoa import SingleRead
-from tanoa import Chromosome # this is all the classes and methods...
-# do this in 1 import statement?
+from tanoa import Chromosome 
 
 def generate_peaks(args):
 

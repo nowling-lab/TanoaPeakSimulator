@@ -13,7 +13,7 @@ def parseargs():
     parser.add_argument("--depth-file",
                         type=str,
                         required=True,
-                        help=".fasfa file with nucleotide data from DNA sequencing")
+                        help="Depth File with in chromosome,position,reads format")
 
     parser.add_argument("--outputdir",
                         type=str,
