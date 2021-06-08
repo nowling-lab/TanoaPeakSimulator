@@ -1,0 +1,27 @@
+import random
+import argparse
+import os
+
+from caller import read_depth
+
+def call_peaks(args):
+    read_depth(args.depth_file)
+
+def parseargs():
+    parser = argparse.ArgumentParser(description="Tanoa")
+
+    parser.add_argument("--depth-file",
+                        type=str,
+                        required=True,
+                        help=".fasfa file with nucleotide data from DNA sequencing")
+
+    parser.add_argument("--outputdir",
+                        type=str,
+                        required=True,
+                        help="Output file directory")
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parseargs()
+    call_peaks(args)
