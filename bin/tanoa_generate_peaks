@@ -2,12 +2,12 @@ import random
 import argparse
 import os
 
-from Tanoa.Tanoa import get_random_base_pair_string
-from Tanoa.Tanoa import get_random_base_pair_string_list
-from Tanoa.Tanoa import generate_output_files
-from Tanoa.Tanoa import EnhancerRegion
-from Tanoa.Tanoa import SingleRead
-from Tanoa.Tanoa import Chromosome # this is all the classes and methods...
+from tanoa import get_random_base_pair_string
+from tanoa import get_random_base_pair_string_list
+from tanoa import generate_output_files
+from tanoa import EnhancerRegion
+from tanoa import SingleRead
+from tanoa import Chromosome # this is all the classes and methods...
 # do this in 1 import statement?
 
 def generate_peaks(args):
@@ -18,20 +18,20 @@ def generate_peaks(args):
   if args.sequence_file is not None:
       reads_file_name = args.sequence_file
 
-  do_generation(args.enhancer_length, args.read_length, args.num_reads,
-    args.num_enhancers, args.sequence_file)
+  do_generation(args.enhancer_length, args.read_length, args.num_reads, 
+  args.num_enhancers, args.sequence_file, args.outputdir)
 
-  def do_generation(location_length, read_length, num_reads, num_enhancers,
-    reads_file_name):
+def do_generation(location_length, read_length, num_reads, num_enhancers,
+    reads_file_name, outputdir):
 
     output_file_name = "sample_regions.txt"
     samples_file_name = "reads.fasta"
     fasta_read_file_name = reads_file_name
     read_counts_file_name = "depth_data.txt"
 
-    output_file = open(output_file_name, 'w')
-    samples_file = open(samples_file_name, 'w')
-    read_counts_file = open(read_counts_file_name, 'w')
+    output_file = open(outputdir + "/" + output_file_name, 'w')
+    samples_file = open(outputdir + "/" + samples_file_name, 'w')
+    read_counts_file = open(outputdir + "/" + read_counts_file_name, 'w')
 
     read_number = 0
     with open(fasta_read_file_name, "r") as file:
@@ -56,38 +56,37 @@ def generate_peaks(args):
     output_file.close()
     samples_file.close()
 
- def parseargs():
+def parseargs():
     parser = argparse.ArgumentParser(description="Tanoa")
 
-    parser.add_argument("--enhancer_length",
+    parser.add_argument("--enhancer-length",
                         type=int,
                         default=1000,
                         help="Length of enhancer regions, default = 1000")
 
-    parser.add_argument("--num_enhancers",
+    parser.add_argument("--num-enhancers",
                         type=int,
                         default=None,
                         required=True,
                         help="The number of enhancer regions sampled")
 
-    parser.add_argument("--read_length",
+    parser.add_argument("--read-length",
                         type=int,
                         default=100,
                         help="Length of reads in each enhancer region, default = 100")
 
-    parser.add_argument("--num_reads",
+    parser.add_argument("--num-reads",
                         type=int,
                         default=None,
                         required=True,
                         help="The number of reads per each enhancer region")
 
-    parser.add_argument("--reads_file_name",
-                        type=int,
-                        default=10000)
+    parser.add_argument("--sequence-file",
+                        type=str,
+                        required=True,
+                        help=".fasfa file with nucleotide data from DNA sequencing")
 
-   parser.add_argument("--sequence-file", type=str, help=".fasfa file with nucleotide data from DNA sequencing")
-
-   parser.add_argument("--outputdir",
+    parser.add_argument("--outputdir",
                         type=str,
                         required=True,
                         help="Output file directory")
