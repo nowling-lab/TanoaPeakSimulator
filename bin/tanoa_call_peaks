@@ -3,12 +3,11 @@ import os
 
 from caller import call_peaks
 
-def call_peaks(args):
+def do_call_peaks(args):
     """
     Checks the arguments and calls the calls peaks method within the caller directory
     :params args: the arguments given from argparse, depth-file and outputdir
     """
-
     if not os.path.exists(args.outputdir):
       os.makedirs(args.outputdir)
 
@@ -22,7 +21,7 @@ def parseargs():
     """
     generates and returns a namespace for the argument parser
     """
-    parser = argparse.ArgumentParser(description="Tanoa")
+    parser = argparse.ArgumentParser(description="Caller")
 
     parser.add_argument("--depth-file",
                         type=str,
@@ -38,4 +37,4 @@ def parseargs():
 
 if __name__ == "__main__":
     args = parseargs()
-    call_peaks(args)
+    do_call_peaks(args)

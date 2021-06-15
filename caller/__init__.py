@@ -29,10 +29,11 @@ def find_critical(depths):
     """
     index = 0
     critical_list = []
+    keys = list(depths.keys())
     for x in depths.keys():
-        if index != 0 or index != len(depths.keys()) - 1:
-            before = depths.keys()[index-1]
-            after = depths.keys()[index+1]
+        if index != 0 or index != len(keys) - 1:
+            before = keys[index-1]
+            after = keys[index+1]
             slope = (after - before)/2
             # uses the formula f(x+h) - (f(x-2))/2h so that the slope (first derivate) is cnetered on the 
             # intended point 
@@ -48,7 +49,7 @@ def find_inflection(depths):
     """
     index = 0
     inflection_list = []
-    keys = depths.keys()
+    keys = list(depths.keys())
     for x in keys:
         if index <= 1 or index >= len(keys) - 2:
             left_before =  keys[index - 2]
