@@ -17,11 +17,12 @@ def call_peaks(file_name):
                 depths[split_line[1].strip()] = split_line[2].strip()
             else:
                 #do processing here
-                compressed = compress(depths)
-                # criticals = find_critical(depths)
-                # inflections = find_inflection(depths)
-                print(compressed)
+                compressed_depths = compress(depths)
+                criticals = find_critical(compressed_depths)
+                inflections = find_inflection(compressed_depths)
+                print(criticals)
                 print()
+                print(inflections)
                 #####
                 return
                 chromosome = ch
@@ -31,18 +32,17 @@ def call_peaks(file_name):
 def compress(depths):
     depths_compressed = {}
     keys = list(depths.keys())
-    start = depths[keys[0]]
-    for x in range(len(keys) - 2):
+    start_index = 0
+    start = depths[keys[start_index]]
+    for x in range(len(keys) - 1):
         end = depths[keys[x + 1]]
         if start != end:
-            print(keys[int(start)], keys[int(end)])
-            key =  keys[int(start)] + "-" + keys[int(end) - 1] 
+            key =  keys[start_index] + "-" + keys[x] 
             depths_compressed[key] = start
             start = end
+            start_index = x + 1
 
     return depths_compressed
-
-
 
 def find_critical(depths):
     """
@@ -73,7 +73,7 @@ def find_inflection(depths):
     inflection_list = []
     keys = list(depths.keys())
     for x in keys:
-        if index <= 1 and index <= len(keys) - 2:
+        if index >= 2 and index <= len(keys) - 3:
             left_before =  depths[keys[index - 2]]
             left_after = depths[keys[index - 1]]
             left_slope = (int(left_after) - int(left_before))/2
@@ -89,3 +89,4 @@ def find_inflection(depths):
                 inflection_list.append(x)
         index += 1
     return inflection_list
+

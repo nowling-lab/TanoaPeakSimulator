@@ -57,7 +57,7 @@ def do_generation(location_length, read_length, num_reads, num_enhancers,
                     chromosome.reads_list, read_number = get_random_base_pair_string_list(
                         chromosome.enhancer_list, read_length, num_reads,
                         chromosome.sequence, chromosome.chromosome_name, read_number, read_counts_dict)
-                    generate_output_files(chromosome, output_file, samples_file, read_counts_file, read_counts_dict)
+                generate_output_files(chromosome, output_file, samples_file, read_counts_file, read_counts_dict)
                 header = line
                 sequence = ""
             line = line.rstrip()

@@ -92,7 +92,6 @@ def generate_output_files(chromosome, output_file, samples_file, read_counts_fil
         read_counts_output += chromosome.chromosome_name[1:] + "," + str(x) + "," + str(read_counts_dict[x]) + "\n"
     read_counts_file.write(read_counts_output)
 
-
 class EnhancerRegion:
     """
     EnhancerRegion class
