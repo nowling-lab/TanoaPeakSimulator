@@ -8,19 +8,41 @@ def call_peaks(file_name):
     chromosome = "null"
     with open(file_name, "r") as file:
         for line in file:
+            line.strip()
             split_line = line.split(",")
-            ch = split_line[0]
+            ch = split_line[0].strip()
+            if chromosome == "null":
+                chromosome = ch
             if chromosome == ch:
-                depths[split_line[1]] = split_line[2]
+                depths[split_line[1].strip()] = split_line[2].strip()
             else:
                 #do processing here
-                criticals = find_critical(depths)
-                inflections = find_inflection(depths)
-                print(criticals, inflections)
+                compressed = compress(depths)
+                # criticals = find_critical(depths)
+                # inflections = find_inflection(depths)
+                print(compressed)
+                print()
                 #####
+                return
                 chromosome = ch
                 depths = {}
                 depths[split_line[1]] = split_line[2]
+
+def compress(depths):
+    depths_compressed = {}
+    keys = list(depths.keys())
+    start = depths[keys[0]]
+    for x in range(len(keys) - 2):
+        end = depths[keys[x + 1]]
+        if start != end:
+            print(keys[int(start)], keys[int(end)])
+            key =  keys[int(start)] + "-" + keys[int(end) - 1] 
+            depths_compressed[key] = start
+            start = end
+
+    return depths_compressed
+
+
 
 def find_critical(depths):
     """
@@ -30,11 +52,11 @@ def find_critical(depths):
     index = 0
     critical_list = []
     keys = list(depths.keys())
-    for x in depths.keys():
-        if index != 0 or index != len(keys) - 1:
-            before = keys[index-1]
-            after = keys[index+1]
-            slope = (after - before)/2
+    for x in keys:
+        if index != 0 and index <= len(keys) - 2:
+            before = depths[keys[index-1]]
+            after = depths[keys[index+1]]
+            slope = (int(after) - int(before))/2
             # uses the formula f(x+h) - (f(x-2))/2h so that the slope (first derivate) is cnetered on the 
             # intended point 
             if slope == 0:
@@ -51,16 +73,16 @@ def find_inflection(depths):
     inflection_list = []
     keys = list(depths.keys())
     for x in keys:
-        if index <= 1 or index >= len(keys) - 2:
-            left_before =  keys[index - 2]
-            left_after = keys[index - 1]
-            left_slope = (left_after - left_before)/2
+        if index <= 1 and index <= len(keys) - 2:
+            left_before =  depths[keys[index - 2]]
+            left_after = depths[keys[index - 1]]
+            left_slope = (int(left_after) - int(left_before))/2
            
-            right_before = keys[index + 1]
-            right_after = keys[index + 2]
-            right_slope = (right_after - right_before)/2
+            right_before = depths[keys[index + 1]]
+            right_after = depths[keys[index + 2]]
+            right_slope = (int(right_after) - int(right_before))/2
 
-            second_derivative = (right_slope - left_slope)/2
+            second_derivative = (int(right_slope) - int(left_slope))/2
             # uses the same formula as in find_critical, but uses two first order derivatives to calculate
             # the slope/second order derivative, which would be the inflection points
             if second_derivative == 0:
