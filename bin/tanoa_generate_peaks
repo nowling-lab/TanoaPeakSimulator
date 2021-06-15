@@ -1,27 +1,37 @@
-import random
 import argparse
 import os
 
 from tanoa import get_random_base_pair_string
 from tanoa import get_random_base_pair_string_list
 from tanoa import generate_output_files
-from tanoa import EnhancerRegion
-from tanoa import SingleRead
 from tanoa import Chromosome 
 
 def generate_peaks(args):
-
+  """
+  Checks the arguments and then calls the requisite do_generation method
+  :params args: the agruments from the argparser 
+  """
   if not os.path.exists(args.outputdir):
       os.makedirs(args.outputdir)
 
-  if args.sequence_file is not None:
-      reads_file_name = args.sequence_file
+  if args.sequence_file is None:
+      print("The sequence file path was not found")
+      return
 
   do_generation(args.enhancer_length, args.read_length, args.num_reads, 
   args.num_enhancers, args.sequence_file, args.outputdir)
 
 def do_generation(location_length, read_length, num_reads, num_enhancers,
     reads_file_name, outputdir):
+    """
+    Reads the file and generates the output files using the tanoa package
+    :param location_length: The length of the enhancer sequences
+    :param read_length: the length of the reads within the enhancer sequences
+    :param num_reads: the amount of reads to take per enhancer sequence
+    :param num_enhancers: the amount of enhancer sequences chosen to take reads from
+    :param reads_file_name: the file name which contains the sequence file
+    :param outputdir: the output directory for the output files
+    """
 
     output_file_name = "sample_regions.txt"
     samples_file_name = "reads.fasta"
@@ -31,16 +41,17 @@ def do_generation(location_length, read_length, num_reads, num_enhancers,
     output_file = open(outputdir + "/" + output_file_name, 'w')
     samples_file = open(outputdir + "/" + samples_file_name, 'w')
     read_counts_file = open(outputdir + "/" + read_counts_file_name, 'w')
-
+    # sets all prerequisite file names, and creates the output files in the output directory
     read_number = 0
     with open(fasta_read_file_name, "r") as file:
         header = file.readline()
         sequence = ""
-        for line in file:
+        for line in file: 
             if '>' in line:
                 chromosome = Chromosome(header, sequence)
                 read_counts_dict = {}
-                for x in range(num_enhancers):
+                for x in range(num_enhancers): # for each chromosome, enhancers are chosen
+                    # and reads are taken. These will all be contained in the same output file
                     get_random_base_pair_string(location_length, read_length, chromosome.sequence,
                                                 chromosome.enhancer_list)
                     chromosome.reads_list, read_number = get_random_base_pair_string_list(

@@ -1,13 +1,27 @@
-import random
 import argparse
 import os
 
-from caller import read_depth
+from caller import call_peaks
 
 def call_peaks(args):
-    read_depth(args.depth_file)
+    """
+    Checks the arguments and calls the calls peaks method within the caller directory
+    :params args: the arguments given from argparse, depth-file and outputdir
+    """
+
+    if not os.path.exists(args.outputdir):
+      os.makedirs(args.outputdir)
+
+    if args.depth_file is None:
+        print("Path specified to depth file is invalid")
+        return 
+
+    call_peaks(args.depth_file)
 
 def parseargs():
+    """
+    generates and returns a namespace for the argument parser
+    """
     parser = argparse.ArgumentParser(description="Tanoa")
 
     parser.add_argument("--depth-file",
