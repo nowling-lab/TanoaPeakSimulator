@@ -15,7 +15,7 @@ def do_call_peaks(args):
         print("Path specified to depth file is invalid")
         return 
 
-    call_peaks(args.depth_file)
+    call_peaks(args.depth_file, args.outputdir)
 
 def parseargs():
     """

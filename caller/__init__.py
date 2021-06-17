@@ -1,11 +1,12 @@
 
-def call_peaks(file_name):
+def call_peaks(file_name, outputdir):
     """
     Takes a depth file and calculates where peaks are within that file
     :param file_name: the path to that depth file
     """
     depths = {}
     chromosome = "null"
+    output_file = open(outputdir + "/" + "tanoa_called_peaks.peaks", 'w')
     with open(file_name, "r") as file:
         for line in file:
             line.strip()
@@ -20,11 +21,10 @@ def call_peaks(file_name):
                 compressed_depths = compress(depths)
                 criticals = find_critical(compressed_depths)
                 inflections = find_inflection(compressed_depths)
-                print(criticals)
-                print()
-                print(inflections)
+                delete_minimum_criticals(criticals, inflections, compressed_depths)
+                remove_redundant_inflections(criticals, inflections)
+                write_peaks_to_file(criticals, inflections, output_file, chromosome)
                 #####
-                return
                 chromosome = ch
                 depths = {}
                 depths[split_line[1]] = split_line[2]
@@ -58,8 +58,8 @@ def find_critical(depths):
             after = depths[keys[index+1]]
             slope = (int(after) - int(before))/2
             # uses the formula f(x+h) - (f(x-2))/2h so that the slope (first derivate) is cnetered on the 
-            # intended point 
-            if slope == 0:
+            # intended point
+            if slope == 0 and int(depths[x]) > 1:
                 critical_list.append(x)
         index += 1
     return critical_list
@@ -90,3 +90,46 @@ def find_inflection(depths):
         index += 1
     return inflection_list
 
+def delete_minimum_criticals(criticals, inflections, compresssed_depths):
+    criticals_to_remove = []
+    inflections_to_remove = set()
+    for x in range(len(criticals) - 1):
+        for y in range(len(inflections) - 1):
+            if inflections[y] > criticals[x]:
+                if compresssed_depths[inflections[y]] > compresssed_depths[criticals[x]]:
+                    criticals_to_remove.append(criticals[x])
+                    inflections_to_remove.add(inflections[y])
+                    inflections_to_remove.add(inflections[y-1])
+                    break
+    for x in criticals_to_remove:
+        criticals.remove(x)
+    for x in inflections_to_remove:
+        inflections.remove(x)
+
+def remove_redundant_inflections(criticals, inflections):
+    inflections_to_remove = set()
+    safe_inflections = set()
+    for x in range(len(inflections) - 2):
+        rising = inflections[x]
+        falling = inflections[x+1]
+        found_critical = False
+        for y in criticals:
+            if rising < y < falling:
+                found_critical = True
+                safe_inflections.add(rising)
+                safe_inflections.add(falling)
+        if not found_critical:
+            inflections_to_remove.add(rising)
+            inflections_to_remove.add(falling)
+
+    for x in safe_inflections:
+        if x in inflections_to_remove:
+            inflections_to_remove.remove(x)
+    for x in inflections_to_remove:
+        inflections.remove(x)
+
+def write_peaks_to_file(criticals, inflections, output_file, chromosome):
+    output_str = ">" + chromosome + " Peaks: \n"
+    for x in range( len(criticals) - 1):
+        output_str = output_str + str(x + 1) + ": " + criticals[x] + "\n"
+    output_file.write(output_str)
