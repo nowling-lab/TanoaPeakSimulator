@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from caller import call_peaks
+from caller import call_peaks_calculus
 
 def do_call_peaks(args):
     """
@@ -13,9 +13,11 @@ def do_call_peaks(args):
 
     if args.depth_file is None:
         print("Path specified to depth file is invalid")
-        return 
-
-    call_peaks(args.depth_file, args.outputdir)
+        return
+    calculation_style = "Conceptual" 
+    if args.cal_style == 1:
+        calculation_style = "Calculus"
+    call_peaks_calculus(args.depth_file, args.outputdir, calculation_style, args.write_depths)
 
 def parseargs():
     """
@@ -32,6 +34,21 @@ def parseargs():
                         type=str,
                         required=True,
                         help="Output file directory")
+    
+    parser.add_argument("--cal-style",
+                        type=int,
+                        required=False,
+                        default=2,
+                        help="Calculus or Conceptual. Use 1 for Calculus, or 2 for Conceptual." +
+                        " Calculus uses first and second order derivatives to calculate peaks while " + 
+                        " Conceptual registers the trend of the depth file and uses that to generate peaks" +
+                        " Conceptual is more accurate, and is the default")
+
+    parser.add_argument("--write-depths",
+                        type=bool,
+                        required=False,
+                        default=False,
+                        help="Prints the depth file after compression for troubleshooting or curiosity")
 
     return parser.parse_args()
 

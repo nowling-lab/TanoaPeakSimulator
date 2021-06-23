@@ -1,5 +1,8 @@
 
-def call_peaks(file_name, outputdir):
+from os import pathsep, write
+
+
+def call_peaks_calculus(file_name, outputdir, calculation_style, write_depths):
     """
     Takes a depth file and calculates where peaks are within that file
     :param file_name: the path to that depth file
@@ -7,10 +10,12 @@ def call_peaks(file_name, outputdir):
     depths = {}
     chromosome = "null"
     output_file = open(outputdir + "/" + "tanoa_called_peaks.peaks", 'w')
+    if write_depths:
+        compressed_depths_output = open(outputdir + "/" + "compressed_depths.depths", 'w')
     with open(file_name, "r") as file:
         for line in file:
             line.strip()
-            split_line = line.split(",")
+            split_line = line.split()
             ch = split_line[0].strip()
             if chromosome == "null":
                 chromosome = ch
@@ -18,15 +23,29 @@ def call_peaks(file_name, outputdir):
                 depths[split_line[1].strip()] = split_line[2].strip()
             else:
                 #do processing here
+                print("Compressing " + chromosome)
                 compressed_depths = compress(depths)
-                criticals = find_critical(compressed_depths)
-                inflections = find_inflection(compressed_depths)
-                delete_minimum_criticals(criticals, inflections, compressed_depths)
-                remove_redundant_inflections(criticals, inflections)
-                write_peaks_to_file(criticals, inflections, output_file, chromosome)
+                depths = {}
+                if calculation_style == "Calculus":
+                    print("Finding critical points")
+                    criticals = find_critical(compressed_depths)
+                    print("Finding inflection points")
+                    inflections = find_inflection(compressed_depths)
+                    print("Scrubbing extranious criticals")
+                    delete_minimum_criticals(criticals, inflections, compressed_depths)
+                    print("removing redundant inflections")
+                    remove_redundant_inflections(criticals, inflections)
+                    write_peaks_to_file(criticals, inflections, output_file, chromosome)
+                elif calculation_style == "Conceptual":
+                    print("Calling peaks")
+                    peak_list = call_peaks_conceptual(compressed_depths)
+                    inflections = []
+                    write_peaks_to_file(peak_list, inflections, output_file, chromosome)
+                if write_depths:
+                    write_depths_to_file(compressed_depths_output, chromosome, compressed_depths)
+                print("Peaks in " + chromosome + " called and written to file")
                 #####
                 chromosome = ch
-                depths = {}
                 depths[split_line[1]] = split_line[2]
 
 def compress(depths):
@@ -59,7 +78,7 @@ def find_critical(depths):
             slope = (int(after) - int(before))/2
             # uses the formula f(x+h) - (f(x-2))/2h so that the slope (first derivate) is cnetered on the 
             # intended point
-            if slope == 0 and int(depths[x]) > 1:
+            if slope <= 0.2 and int(depths[x]) > 1:
                 critical_list.append(x)
         index += 1
     return critical_list
@@ -85,7 +104,7 @@ def find_inflection(depths):
             second_derivative = (int(right_slope) - int(left_slope))/2
             # uses the same formula as in find_critical, but uses two first order derivatives to calculate
             # the slope/second order derivative, which would be the inflection points
-            if second_derivative == 0:
+            if second_derivative <= 0:
                 inflection_list.append(x)
         index += 1
     return inflection_list
@@ -133,3 +152,79 @@ def write_peaks_to_file(criticals, inflections, output_file, chromosome):
     for x in range( len(criticals) - 1):
         output_str = output_str + str(x + 1) + ": " + criticals[x] + "\n"
     output_file.write(output_str)
+
+def write_depths_to_file(output, chromosome, compressed_depths):
+    output.write(">" + chromosome + " Depths: \n")
+    keys = list(compressed_depths.keys())
+    for key in keys:
+        output.write(key + ": " + compressed_depths[key] + "\n")
+        
+
+###########################################
+# Below here is for the Conceptual Approach
+###########################################
+
+def call_peaks_conceptual(compressed_depths):
+    keys = list(compressed_depths.keys())
+    peak_list = []
+    prev_depth = 0
+    is_falling = False
+    for index, key in enumerate(keys):
+        current_depth = int(compressed_depths[key])
+        if prev_depth > current_depth:
+            if not is_falling:
+                is_max = verify_max(compressed_depths, keys, 25, key, index)
+                if is_max:
+                    peak_list.append(key)
+            is_falling = True
+        elif current_depth > prev_depth:
+            is_falling = False
+        prev_depth = current_depth
+    return peak_list
+
+def verify_max(compressed_depths, keys, window_length, peak_key, key_index):
+    half_window = int(window_length/2)
+    split_peak = peak_key.split("-")
+    left_of_peak = split_peak[0]
+    right_of_peak = split_peak[1]
+    middle_peak = int(right_of_peak) - int(left_of_peak)
+    left_target = middle_peak - half_window
+    right_target = middle_peak + half_window
+    window_keys = generate_window(keys, key_index, left_target, right_target)
+    return check_max(window_keys, compressed_depths, key_index, peak_key)
+    
+def check_max(window_keys, compressed_depths, key_index, peak_key):
+    potential_max = compressed_depths[peak_key]
+    is_max = True
+    for key in window_keys:
+        if compressed_depths[key] > potential_max:
+            is_max = False
+    return is_max
+
+def generate_window(keys, key_index, left_target, right_target):
+    window_keys = []
+    # Left side first
+    left_window_index = find_target(keys, key_index, left_target, -1)
+    # Right side next
+    right_window_index = find_target(keys, key_index, right_target, 1)
+    if right_window_index < len(keys) - 2:
+        right_window_index += 1
+    for index in range(left_window_index, right_window_index):
+        window_keys.append(keys[index])
+    return window_keys
+
+def find_target(keys, key_index, target, right_left_modifier):
+    found_left_index = False
+    start_index = key_index
+    while not found_left_index:
+        left_answer = keys[start_index]
+        split_answer = left_answer.split("-")
+        if target <= int(split_answer[0]) or int(split_answer[1]):
+            found_left_index = True
+        start_index += right_left_modifier
+        if start_index == 0:
+            return start_index
+        elif start_index == len(keys) - 1:
+            return len(keys) - 1
+
+    return start_index
