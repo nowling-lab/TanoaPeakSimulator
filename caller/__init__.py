@@ -172,17 +172,16 @@ def call_peaks_conceptual(compressed_depths):
     for index, key in enumerate(keys):
         current_depth = int(compressed_depths[key])
         if prev_depth > current_depth:
-            if not is_falling:
-                is_max = verify_max(compressed_depths, keys, 25, key, index)
-                if is_max:
-                    peak_list.append(key)
+            is_max = verify_max_steps(compressed_depths, keys, 5, keys[index - 1], index - 1)
+            if is_max:
+                peak_list.append(keys[index - 1])
             is_falling = True
         elif current_depth > prev_depth:
             is_falling = False
         prev_depth = current_depth
     return peak_list
 
-def verify_max(compressed_depths, keys, window_length, peak_key, key_index):
+def verify_max_bps(compressed_depths, keys, window_length, peak_key, key_index):
     half_window = int(window_length/2)
     split_peak = peak_key.split("-")
     left_of_peak = split_peak[0]
@@ -190,10 +189,14 @@ def verify_max(compressed_depths, keys, window_length, peak_key, key_index):
     middle_peak = int(right_of_peak) - int(left_of_peak)
     left_target = middle_peak - half_window
     right_target = middle_peak + half_window
-    window_keys = generate_window(keys, key_index, left_target, right_target)
+    window_keys = generate_window_bps(keys, key_index, left_target, right_target)
     return check_max(window_keys, compressed_depths, key_index, peak_key)
     
-def check_max(window_keys, compressed_depths, key_index, peak_key):
+def verify_max_steps(compressed_depths, keys, steps, peak_key, key_index):
+    window_keys = generate_window_steps(keys, key_index, steps)
+    return check_max(window_keys, compressed_depths, peak_key)
+
+def check_max(window_keys, compressed_depths, peak_key):
     potential_max = compressed_depths[peak_key]
     is_max = True
     for key in window_keys:
@@ -201,7 +204,17 @@ def check_max(window_keys, compressed_depths, key_index, peak_key):
             is_max = False
     return is_max
 
-def generate_window(keys, key_index, left_target, right_target):
+def generate_window_steps(keys, key_index, steps):
+    window_keys = []
+    for x in range(1, steps):
+        if key_index - x >= 0:
+            window_keys.append(keys[key_index - x])
+    for x in range(1, steps):
+        if key_index + x < len(keys):
+            window_keys.append(keys[key_index + x])
+    return window_keys
+
+def generate_window_bps(keys, key_index, left_target, right_target):
     window_keys = []
     # Left side first
     left_window_index = find_target(keys, key_index, left_target, -1)
