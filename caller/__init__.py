@@ -15,6 +15,8 @@ def read_and_call(file_name, outputdir, write_depths):
     output_file = open(outputdir + "/" + "tanoa_called_peaks.peaks", 'w')
     if write_depths:
         compressed_depths_output = open(outputdir + "/" + "compressed_depths.depths", 'w')
+    else:
+        compressed_depths_output = "null"
     with open(file_name, "r") as file:
         for line in file:
             line.strip()
@@ -30,19 +32,28 @@ def read_and_call(file_name, outputdir, write_depths):
                 print("Compressing " + chromosome)
                 compressed_depths = compress(depths) #Compress the depths to make later algorithms work better
                 depths = {}                           #and faster
-                print("Calling peaks")
-                peak_list = call_peaks(compressed_depths) #calls peaks 
-                write_peaks_to_file(peak_list, output_file, chromosome) #writes them
-                if write_depths:
-                    write_depths_to_file(compressed_depths_output, chromosome, compressed_depths)
-                print("Peaks in " + chromosome + " called and written to file")
+                prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output)
                 #####
                 print("Reading in ", ch)
                 chromosome = ch
                 depths[split_line[1]] = split_line[2]
+        print("Compressing " + chromosome)
+        compressed_depths = compress(depths) #Compress the depths to make later algorithms work better
+        depths = {} 
+        prossess_and_write_peaks(chromosome, depths, output_file, write_depths, compressed_depths_output)
+        #This gets the last chromosome in the file 
+
     output_file.close
     if write_depths:
         compressed_depths_output.close
+
+def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output):
+    print("Calling peaks")
+    peak_list = call_peaks(compressed_depths) #calls peaks 
+    write_peaks_to_file(peak_list, output_file, chromosome) #writes them
+    if write_depths:
+        write_depths_to_file(compressed_depths_output, chromosome, compressed_depths)
+    print("Peaks in " + chromosome + " called and written to file")
 
 def compress(depths):
     """Compress takes a depth file and compresses the depths into "steps": The zones of consistent depth 
@@ -56,16 +67,23 @@ def compress(depths):
     """
     depths_compressed = {}
     keys = list(depths.keys())
-    start_index = 0
-    start = depths[keys[start_index]]
+    start_key = keys[0]
+    start = depths[keys[0]]
+    jump = False
 
-    for x in range(len(keys) - 1): #Compression: Combines all keys a same depth
-        end = depths[keys[x + 1]]
-        if start != end:
-            key =  keys[start_index] + "-" + keys[x] 
-            depths_compressed[key] = start
+    for index, key in enumerate(keys):
+        end = depths[key]
+        if index > 0:
+            int_prev = int(keys[index - 1])
+            int_end = int(key)
+            if int_end - int_prev != 1:
+                jump = True
+        if start != end or jump:
+            key_out =  str(start_key) + "-" + str(key) 
+            depths_compressed[key_out] = start
             start = end
-            start_index = x + 1
+            start_key = key
+            jump = False
 
     return depths_compressed
 
@@ -77,11 +95,11 @@ def write_peaks_to_file(peaks, output_file, chromosome):
         output_file ([type]): [description]
         chromosome ([type]): [description]
     """
-    output_file.write(">" + chromosome + " Peaks: \n")
-    for index, peak in enumerate(peaks):
-        output_file.write(str(index + 1) + ": " + peak + "\n")
-    # for x in range( len([peaks]) - 1):
-    #     output_file.write(str(x + 1) + ": " + peaks[x] + "\n")
+    for peak in peaks:
+        split_peak = peak.split("-")
+        begin_peak = split_peak[0]
+        end_peak = split_peak[1]
+        output_file.write(chromosome + " " + begin_peak + " " + end_peak + "\n")
 
 def write_depths_to_file(output, chromosome, compressed_depths):
     """Wries depths to file if the Write_Depths field was set to True
@@ -91,10 +109,10 @@ def write_depths_to_file(output, chromosome, compressed_depths):
         chromosome (String): The name of the chromosome who's depths are being added to the file
         compressed_depths (Dictionary): A dictionary of compressed depths in location: depth format
     """
-    output.write(">" + chromosome + " Depths: \n")
     keys = list(compressed_depths.keys())
     for key in keys:
-        output.write(key + ": " + compressed_depths[key] + "\n")
+        split_keys = key.split("-")
+        output.write(chromosome + " " + split_keys[0] + " " + split_keys[1] + " " + compressed_depths[key] + "\n")
         
 
 def call_peaks(compressed_depths):
@@ -112,7 +130,7 @@ def call_peaks(compressed_depths):
     for index, key in enumerate(keys):
         current_depth = int(compressed_depths[key])
         if current_depth > prev_depth: #Finds locations where the slope is positive...
-            is_max = verify_max(compressed_depths, keys, 10, keys[index], index)
+            is_max = verify_max(compressed_depths, keys, 7, keys[index], index)
             if is_max: #Checks those for being a maximum. What if I did no checking?
                 peak_list.append(keys[index])
         prev_depth = current_depth
