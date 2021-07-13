@@ -59,15 +59,16 @@ def read_and_call(file_name, outputdir, write_depths, write_mins):
 
 def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output, write_mins, min_output):
     print("Calling peaks")
-    peak_list = call_peaks(compressed_depths) #calls peaks 
-    peak_list = clean_peaks(peak_list)
+    peak_list = call_peaks(compressed_depths) #calls peaks
+    print("Cleaning peaks") 
+    peak_list = clean_peaks(peak_list, compressed_depths)
     write_peaks_to_file(peak_list, output_file, chromosome) #writes them
     if write_depths:
         write_depths_to_file(compressed_depths_output, chromosome, compressed_depths)
     if write_mins:
         min_list = call_troughs(compressed_depths)
         write_peaks_to_file(min_list, min_output, chromosome)
-    print("Peaks in " + chromosome + " called and written to file")
+    print(str(len(peak_list)) + " Peaks in " + chromosome + " called and written to file")
 
 def compress(depths):
     """Compress takes a depth file and compresses the depths into "steps": The zones of consistent depth 
@@ -101,29 +102,157 @@ def compress(depths):
 
     return depths_compressed
 
-def clean_peaks(peak_list):
+def clean_peaks(peak_list, compressed_depths):
+    keys = list(compressed_depths.keys())
     new_peaks = []
+    peak_black_dict = {}
+    start_index = 0
     for index, peak in enumerate(peak_list):
-        split_peak = peak.split("-")
-        start = split_peak[0]
-        end = split_peak[1]
-        if index != len(peak_list) - 1:
-            next_peak_split = peak_list[index + 1].split("-")
-            start_next = next_peak_split[0]
-            end_next = next_peak_split[1]
-            if int(start_next) - int(end) <= 150:
-                new_peak = start + "-" + end_next
-                new_peaks.append(new_peak)
+        if peak not in peak_black_dict:
+            start_index, background_index_left, background_index_right = get_background(peak, compressed_depths, keys, start_index)
+            if start_index == keys[background_index_right] and keys[background_index_left]:
+                new_peaks.append(peak)
             else:
-                if len(new_peaks) != 0:
-                    last_peak = new_peaks[-1]
-                    last_split = last_peak.split("-")
-                    last_end = last_split[1]
-                    if int(end) != int(last_end):
-                        new_peaks.append(peak)
-                else:
-                    new_peaks.append(peak)
+                temp_peak = register_new_peak(background_index_left, background_index_right, peak_list, index, keys, peak_black_dict)
+                new_peaks.append(temp_peak)
+
     return new_peaks
+
+def register_new_peak(background_index_left, background_index_right, peak_list, peak_index, keys, peak_black_dict):
+    # Get original peak, left step and right step
+    left_end = keys[background_index_left]
+    right_end = keys[background_index_right]
+
+    # combine all peaks within the boundary and blacklist necessary peaks
+    # get furthest left peak
+    found_left = False
+    index_copy = peak_index
+    left_limit = ""
+    while not found_left:
+        if compare(peak_list[index_copy], left_end) == 1:
+            peak_black_dict[peak_list[index_copy]] = True
+            index_copy -= 1
+            if index_copy <= 0:
+                break
+        else:
+            index_copy += 1
+            left_limit = peak_list[index_copy]
+            found_left = True
+
+    # get furthest right peak
+    found_right = False
+    right_limit = ""
+    index_copy = peak_index
+    while not found_right:
+        if compare(peak_list[index_copy], right_end) == -1:
+            peak_black_dict[peak_list[index_copy]] = True
+            index_copy += 1
+            if index_copy == len(peak_list):
+                break
+        else:
+            index_copy -= 1
+            right_limit = peak_list[index_copy]
+            found_right = True
+
+    # use the found variables to combine and make a new peak
+    peak = ""
+    if found_left and found_right:
+        left_start = left_limit.split("-")[0]
+        right_end = right_limit.split("-")[1]
+        peak = left_start + "-" + right_end
+    elif found_left:
+        left_start = left_limit.split("-")[0]
+        right_end =  peak_list[peak_index].split("-")[1]
+        peak = left_start + "-" + right_end
+        peak_black_dict[peak_list[peak_index]] = True
+    elif found_right:
+        left_start = peak_list[peak_index].split("-")[0]
+        right_end =  right_limit.split("-")[1]
+        peak = left_start + "-" + right_end
+        peak_black_dict[peak_list[peak_index]] = True
+    else:
+        peak = peak_list[peak_index]
+    # return new combined peak if applicible
+    return peak
+
+def compare(peak1, peak2):
+    peak1_start = int(peak1.split("-")[0])
+    peak2_start = int(peak2.split("-")[0])
+    if peak1_start == peak2_start:
+        return 0
+    elif peak1_start > peak2_start:
+        return 1
+    else:
+        return -1
+    
+def get_background(peak, compressed_depths, keys, start_index):
+    peak_index = keys.index(peak, start_index)
+    temp_index_left = peak_index
+    temp_index_right = peak_index
+    background_index_left = 0
+    background_index_right = 0
+    # Find peak in compressed_depths file
+    # Find Left background
+    found_background = False
+    while not found_background:
+        depth = int(compressed_depths[keys[temp_index_left]])
+        if depth <= 4:
+            found_background = True
+            background_index_left = temp_index_left
+        elif temp_index_left > 0:
+            temp_index_left -= 1
+        else:
+            background_index_left = 0
+    # Find Right Background
+    found_background = False
+    while not found_background:
+        depth = int(compressed_depths[keys[temp_index_right]])
+        if depth <= 4:
+            found_background = True
+            background_index_right = temp_index_right
+        elif temp_index_right < len(compressed_depths):
+            temp_index_right += 1
+        else:
+            background_index_right = len(compressed_depths) - 1
+
+    return peak_index, background_index_left, background_index_right
+
+def call_troughs(compressed_depths):
+    keys = list(compressed_depths.keys())
+    trough_list = []
+    prev_depth = 0
+    for index, key in enumerate(keys):
+        current_depth = int(compressed_depths[key])
+        if current_depth < prev_depth: #Finds locations where the slope is negative
+            is_min = verify_min(compressed_depths, keys, 3, keys[index], index)
+            if is_min: #Checks those for being a minimum. This is just the max algo flipped
+                trough_list.append(keys[index])
+        prev_depth = current_depth
+    return trough_list
+
+# def clean_peaks(peak_list):
+#     new_peaks = []
+#     for index, peak in enumerate(peak_list):
+#         split_peak = peak.split("-")
+#         start = split_peak[0]
+#         end = split_peak[1]
+#         if index != len(peak_list) - 1:
+#             next_peak_split = peak_list[index + 1].split("-")
+#             start_next = next_peak_split[0]
+#             end_next = next_peak_split[1]
+#             if int(start_next) - int(end) <= 500:
+#                 new_peak = start + "-" + end_next
+#                 new_peaks.append(new_peak)
+#             else:
+#                 if len(new_peaks) != 0:
+#                     last_peak = new_peaks[-1]
+#                     last_split = last_peak.split("-")
+#                     last_end = last_split[1]
+#                     if int(end) != int(last_end):
+#                         new_peaks.append(peak)
+#                 else:
+#                     new_peaks.append(peak)
+#     return new_peaks
 
 def write_peaks_to_file(peaks, output_file, chromosome):
     """Wries a given list of peaks to file
@@ -205,7 +334,7 @@ def check_max(window_keys, compressed_depths, peak_key):
     potential_max = int(compressed_depths[peak_key])
     is_max = True
 
-    if potential_max <= 3:
+    if potential_max <= 4:
         return False
 
     max_equals = 0
@@ -217,22 +346,9 @@ def check_max(window_keys, compressed_depths, peak_key):
         elif key_depth == potential_max:
             max_equals += 1
     if max_equals >= 2:
-        key_depth = False
+        is_max = False
 
     return is_max
-
-def call_troughs(compressed_depths):
-    keys = list(compressed_depths.keys())
-    trough_list = []
-    prev_depth = 0
-    for index, key in enumerate(keys):
-        current_depth = int(compressed_depths[key])
-        if current_depth < prev_depth: #Finds locations where the slope is negative
-            is_min = verify_min(compressed_depths, keys, 3, keys[index], index)
-            if is_min: #Checks those for being a minimum. This is just the max algo flipped
-                trough_list.append(keys[index])
-        prev_depth = current_depth
-    return trough_list
 
 def verify_min(compressed_depths, keys, steps, peak_key, key_index):
     window_keys = generate_window(keys, key_index, steps)
