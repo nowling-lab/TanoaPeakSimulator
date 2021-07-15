@@ -12,19 +12,19 @@ def read_and_call(file_name, outputdir, write_depths):
         write_depths (Bool): Bool which decides if to write the compressed depth file to file or not
     """
     depths = {}
-    chromosome = "null"
+    chromosome = None
     output_file = open(outputdir + "/" + "tanoa_called_peaks.peaks", 'w')
     if write_depths:
         compressed_depths_output = open(outputdir + "/" + "compressed_depths.depths", 'w')
     else:
-        compressed_depths_output = "null"
+        compressed_depths_output = None
 
     with open(file_name, "r") as file:
         for line in file:
             line.strip()
             split_line = line.split()
             ch = split_line[0].strip()
-            if chromosome == "null":
+            if chromosome == None:
                 chromosome = ch
                 print("Reading in ", ch)
             if chromosome == ch: #Standard chromosome check to run software 1 ch at a time
@@ -73,17 +73,17 @@ def compress(depths):
     registered as one singular depth for the sake of finding peaks
 
     Args:
-        depths (dictionary): The original depth file
+        depths (dictionary): The original depth file in position: depth format
 
     Returns:
-        dictionary: The dictionary of compressed depth files
+        dictionary: The dictionary of compressed depth files in start_pos-end_pos: depth of step
     """
     depths_compressed = {}
     keys = list(depths.keys())
     start_key = keys[0]
     start = depths[keys[0]]
     jump = False
-
+    #TODO Use touples instead of strings for keys... Sorta large undertaking but eh, it'll be fine
     for index, key in enumerate(keys):
         end = depths[key]
         if index > 0:
@@ -364,7 +364,7 @@ def check_max(window_keys, compressed_depths, peak_key):
     return is_max
     
 def generate_window(keys, key_index, steps):
-    """Generates a list (window) steps distance t the left and right of a given peak 
+    """Generates a list (window) steps distance to the left and right of a given peak 
 
     Args:
         keys (List): The keys for the compressed depths dictionary
