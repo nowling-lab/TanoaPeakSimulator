@@ -14,7 +14,7 @@ def do_call_peaks(args):
     if args.depth_file is None:
         print("Path specified to depth file is invalid")
         return
-    read_and_call(args.depth_file, args.outputdir, args.write_depths, args.write_mins)
+    read_and_call(args.depth_file, args.outputdir, args.write_depths)
 
 def parseargs():
     """
@@ -36,11 +36,6 @@ def parseargs():
                         required=False,
                         action = 'store_true',
                         help="Prints the depth file after compression for troubleshooting or curiosity when included")
-
-    parser.add_argument("--write-mins",
-                        required=False,
-                        action='store_true',
-                        help="When included, writes the minimums to file, not just the peaks")
 
     return parser.parse_args()
 
