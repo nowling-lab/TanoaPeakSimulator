@@ -92,7 +92,7 @@ def compress(depths):
             if int_end - int_prev != 1:
                 jump = True
         if start != end or jump: #Finds all 
-            key_out =  str(start_key) + "-" + str(key) 
+            key_out =  str(start_key) + "-" + str(keys[index - 1]) 
             depths_compressed[key_out] = start
             start = end
             start_key = key
@@ -149,11 +149,14 @@ def register_new_peak(background_index_left, background_index_right, peak_list, 
     index_copy = peak_index
     left_limit = ""
     while not found_left:
-        if compare(peak_list[index_copy], left_end) == 1:
+        compare = compare(peak_list[index_copy], left_end)
+        if compare == -1:
             peak_black_dict[peak_list[index_copy]] = True
             index_copy -= 1
             if index_copy <= 0:
                 break
+        elif compare == 0:
+            break
         else:
             index_copy += 1
             left_limit = peak_list[index_copy]
@@ -164,17 +167,24 @@ def register_new_peak(background_index_left, background_index_right, peak_list, 
     right_limit = ""
     index_copy = peak_index
     while not found_right:
-        if compare(peak_list[index_copy], right_end) == -1:
+        compare = compare(peak_list[index_copy], right_end)
+        if compare == -1:
             peak_black_dict[peak_list[index_copy]] = True
             index_copy += 1
             if index_copy == len(peak_list):
                 break
+        elif compare == 0:
+            break
         else:
             index_copy -= 1
             right_limit = peak_list[index_copy]
             found_right = True
 
     # use the found variables to combine and make a new peak
+    if peak_list[peak_index] in left_limit and right_limit:
+        found_left == False
+        found_right == False
+
     peak = ""
     if found_left and found_right:
         left_start = left_limit.split("-")[0]
