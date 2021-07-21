@@ -11,6 +11,7 @@ Usage:
     tanoa_generate_peaks: It's recommended to use the default enhancer length and read length. Needed flags
     are the number of enhancers, the number of reads, the sequence file, and the directory to output.
     And example usage of this program is this:
+    
         tanoa_generate_peaks --num-enhancers 3 --num-reads 50 --sequence-file ~/sequence-file.fasta --outputdir ~/outputdirectory
 
         3 enhancers with 50 reads each generate decent peak-like structures, while also managing a relatively low (compared to higher numbers) run-time
