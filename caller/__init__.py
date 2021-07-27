@@ -63,6 +63,7 @@ def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_d
     peak_list = call_peaks(compressed_depths) #calls peaks
     print("Cleaning peaks") 
     peak_list = clean_peaks(peak_list, compressed_depths)
+    peak_list = connect_peaks(peak_list, compressed_depths)
     write_peaks_to_file(peak_list, output_file, chromosome) #writes them
     if write_depths:
         write_depths_to_file(compressed_depths_output, chromosome, compressed_depths)
@@ -98,6 +99,46 @@ def compress(depths):
             jump = False
 
     return depths_compressed
+
+def connect_peaks(peak_list, compressed_depths):
+    search_start = 0
+    new_peak_list = []
+    new_peak = None
+    connect_peaks = False
+    for index, peak in enumerate(peak_list):
+        if index < len(peak_list) - 1:
+            next_peak_start = peak_list[index + 1][0]
+            compressed_index = find_in_compressed(peak[1], compressed_depths, search_start)
+            search_start = compressed_index
+            compressed_index_next = find_in_compressed(next_peak_start, compressed_depths, search_start)
+
+            if compressed_index_next - compressed_index <= 2:
+                if connect_peaks:
+                    new_peak = new_peak_list[-1][0], peak_list[index + 1][1]
+                    new_peak_list.pop()
+                    new_peak_list.append(new_peak)
+                else:
+                    new_peak = peak[0], peak_list[index + 1][1]
+                    new_peak_list.append(new_peak)
+                connect_peaks = True
+            else:
+                if len(new_peak_list) >= 1 and check_overlap(peak, new_peak_list[-1]) != 0:
+                    new_peak_list.append(peak)
+                    connect_peaks = False
+                elif len(new_peak_list) == 0:
+                    new_peak_list.append(peak)
+
+    if not connect_peaks:
+        new_peak_list.append(peak_list[-1])
+    return new_peak_list
+            
+def find_in_compressed(peak_start, compressed_depths, search_start_index):
+    keys = list(compressed_depths.keys())
+    for index in range(search_start_index, len(keys)):
+        key_start, key_end = keys[index]
+        if key_start == peak_start or key_end == peak_start:
+            return index
+    return -1
 
 def clean_peaks(peak_list, compressed_depths):
     """Removes, extends and registers new peaks for all peaks
@@ -201,7 +242,19 @@ def compare_peaks(peak1, peak2):
         return 1
     else:
         return -1
-    
+
+def check_overlap(peak1, peak2):
+    peak1_start = peak1[0]
+    peak2_start = peak2[0]
+    peak1_end = peak1[1]
+    peak2_end = peak2[1]
+    if peak2_start <= peak1_start <= peak2_end or peak1_start <= peak2_start <= peak1_end:
+        return 0
+    elif peak1_start > peak2_start:
+        return 1
+    else:
+        return -1
+
 def get_background(peak, compressed_depths, keys, start_index):
     """Finds the index of a given peak within the compressed depths file, finds the background left and right
         of a given peak
@@ -224,7 +277,7 @@ def get_background(peak, compressed_depths, keys, start_index):
     # Find Left background
     found_background = False
     while not found_background:
-        depth = int(compressed_depths[keys[temp_index_left]])
+        depth = compressed_depths[keys[temp_index_left]]
         if depth <= 3:
             found_background = True
             background_index_left = temp_index_left
@@ -235,7 +288,7 @@ def get_background(peak, compressed_depths, keys, start_index):
     # Find Right Background
     found_background = False
     while not found_background:
-        depth = int(compressed_depths[keys[temp_index_right]])
+        depth = compressed_depths[keys[temp_index_right]]
         if depth <= 3: #TODO: CHECK BACKGROUND SIZE. 3 GIVES LESS PEAKS THAN 4. MUST CHECK ACCURACY AGAIN
             found_background = True
             background_index_right = temp_index_right
