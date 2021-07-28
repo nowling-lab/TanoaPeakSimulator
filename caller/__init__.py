@@ -1,6 +1,7 @@
 
 from os import pathsep, write
-from posixpath import split
+from posixpath import commonpath, split
+
 
 
 def read_and_call(file_name, outputdir, write_depths):
@@ -60,8 +61,10 @@ def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_d
         compressed_depths_output (File): File to output if the option of writing compressed depths was given
     """
     print("Calling peaks")
+    smooth_compressed(compressed_depths, 2)
     peak_list = call_peaks(compressed_depths) #calls peaks
-    print("Cleaning peaks") 
+    print("Cleaning peaks")
+    #smooth_compressed(compressed_depths, 2) 
     peak_list = clean_peaks(peak_list, compressed_depths)
     peak_list = connect_peaks(peak_list, compressed_depths)
     write_peaks_to_file(peak_list, output_file, chromosome) #writes them
@@ -100,6 +103,30 @@ def compress(depths):
 
     return depths_compressed
 
+def smooth_compressed(compressed_depths, window):
+    half_window = window//2
+    keys = list(compressed_depths.keys())
+    for index, key in enumerate(keys):
+        array_to_avg = []
+        if index >= half_window:
+            for x in range(index-half_window, index):
+                array_to_avg.append(compressed_depths[keys[x]])
+        else:
+            for x in range(0, index):
+                array_to_avg.append(compressed_depths[keys[x]])
+
+        if index + half_window < len(keys):
+            for x in range(index, index+half_window + 1):
+                array_to_avg.append(compressed_depths[keys[x]])
+        else:
+            for x in range(index, len(keys)):
+                array_to_avg.append(compressed_depths[keys[x]])
+        
+        average = sum(array_to_avg)/len(array_to_avg)
+        compressed_depths[key] = average
+    
+    
+                
 def connect_peaks(peak_list, compressed_depths):
     search_start = 0
     new_peak_list = []
@@ -278,7 +305,7 @@ def get_background(peak, compressed_depths, keys, start_index):
     found_background = False
     while not found_background:
         depth = compressed_depths[keys[temp_index_left]]
-        if depth <= 3:
+        if depth <= 4:
             found_background = True
             background_index_left = temp_index_left
         elif temp_index_left > 0:
@@ -289,7 +316,7 @@ def get_background(peak, compressed_depths, keys, start_index):
     found_background = False
     while not found_background:
         depth = compressed_depths[keys[temp_index_right]]
-        if depth <= 3: #TODO: CHECK BACKGROUND SIZE. 3 GIVES LESS PEAKS THAN 4. MUST CHECK ACCURACY AGAIN
+        if depth <= 4: #TODO: CHECK BACKGROUND SIZE. 3 GIVES LESS PEAKS THAN 4. MUST CHECK ACCURACY AGAIN
             found_background = True
             background_index_right = temp_index_right
         elif temp_index_right < len(compressed_depths):
@@ -321,7 +348,7 @@ def write_depths_to_file(output, chromosome, compressed_depths):
     """
     keys = list(compressed_depths.keys())
     for key in keys:
-        output.write(chromosome + " " + str(key[0]) + " " + str(keys[1]) + " " + compressed_depths[key] + "\n")
+        output.write(chromosome + " " + str(key) + " " + str(compressed_depths[key]) + "\n")
         
 
 def call_peaks(compressed_depths):
@@ -341,7 +368,7 @@ def call_peaks(compressed_depths):
         if current_depth > prev_depth: #Finds locations where the slope is positive...
             is_max = verify_max(compressed_depths, keys, 3, keys[index], index)
             if is_max: #Checks those for being a maximum. What if I did no checking?
-                peak_list.append(keys[index])
+                peak_list.append(keys[index]) #TODO: Rename stuff
         prev_depth = current_depth
     return peak_list
     
