@@ -61,10 +61,10 @@ def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_d
         compressed_depths_output (File): File to output if the option of writing compressed depths was given
     """
     print("Calling peaks")
-    smooth_compressed(compressed_depths, 2)
-    peak_list = call_peaks(compressed_depths) #calls peaks
+    #smooth_compressed(compressed_depths, 2)
+    peak_list = find_maximums(compressed_depths) #calls peaks
     print("Cleaning peaks")
-    #smooth_compressed(compressed_depths, 2) 
+    smooth_compressed(compressed_depths, 2) 
     peak_list = clean_peaks(peak_list, compressed_depths)
     peak_list = connect_peaks(peak_list, compressed_depths)
     write_peaks_to_file(peak_list, output_file, chromosome) #writes them
@@ -351,7 +351,7 @@ def write_depths_to_file(output, chromosome, compressed_depths):
         output.write(chromosome + " " + str(key) + " " + str(compressed_depths[key]) + "\n")
         
 
-def call_peaks(compressed_depths):
+def find_maximums(compressed_depths):
     """Searches for and adds found peaks to a list
 
     Args:
@@ -361,16 +361,16 @@ def call_peaks(compressed_depths):
         [List]: A list of found peaks
     """
     keys = list(compressed_depths.keys())
-    peak_list = []
+    local_maximums = []
     prev_depth = 0
     for index, key in enumerate(keys):
         current_depth = compressed_depths[key]
         if current_depth > prev_depth: #Finds locations where the slope is positive...
             is_max = verify_max(compressed_depths, keys, 3, keys[index], index)
             if is_max: #Checks those for being a maximum. What if I did no checking?
-                peak_list.append(keys[index]) #TODO: Rename stuff
+                local_maximums.append(keys[index]) #TODO: Rename stuff
         prev_depth = current_depth
-    return peak_list
+    return local_maximums
     
 def verify_max(compressed_depths, keys, steps, peak_key, key_index):
     """Given a peak, checks if it is a local maximum
