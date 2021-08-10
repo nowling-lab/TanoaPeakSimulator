@@ -23,5 +23,6 @@ For those who do not have a depth file ready, one can be formulated by using the
     and
     tanoa_call_peaks --depth-file ~/fragments_depths.tsv --outputdir ~/outputdirectory --write-depths
 
-Tutorials (link)
-Home(link)
+[Tutorials](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/README.md)
+
+[Home](https://github.com/nowling-lab/TanoaPeakSimulator/tree/dev)
