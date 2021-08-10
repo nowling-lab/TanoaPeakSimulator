@@ -7,6 +7,7 @@ of potential peaks to then be filtered through.
 # Documentation
 ---
 Tutorials and installation guides 
+
     1. [Installing Tanoa](../blob/dev/tutorials/installing-tanoa.md)
     2. [Tanoa call peaks](../blob/dev/tutorials/call-peaks.md)
     3. [Tanoa generate peaks](../blob/dev/tutorials/generate-peaks.md)
