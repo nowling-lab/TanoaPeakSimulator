@@ -39,4 +39,4 @@ Quick Start Guide
 ---
 
 Note: In depth Tanoa notes on the processes of what tanoa does and why can be found here, in the docs folder,
-    or in the respective guides for call peak or generate peaks
+    or in the respective guides for call peaks or generate peaks

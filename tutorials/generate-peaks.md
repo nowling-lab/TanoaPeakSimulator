@@ -8,9 +8,10 @@ Tanoa can be used to generate peak-like structures. This feature currently is no
     enhancer region. 
 
 Examples of the currently supported generate peak commands are here:
-            tanoa_generate_peaks --num-enhancers 3 --num-reads 50 --sequence-file ~/sequence-file.fasta --outputdir ~/outputdirectory
 
-            3 enhancers with 50 reads each generate decent peak-like structures, while also managing a relatively low (compared to higher numbers) run-time
+    tanoa_generate_peaks --num-enhancers 3 --num-reads 50 --sequence-file ~/sequence-file.fasta --outputdir ~/outputdirectory
+
+3 enhancers with 50 reads each generate decent peak-like structures, while also managing a relatively low (compared to higher numbers) run-time
 
 If you would like to change the values to see if you can find a configuration that works for your usage, here
 is a table of what each command does:
