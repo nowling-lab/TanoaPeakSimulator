@@ -17,9 +17,10 @@ For those who do not have a depth file ready, one can be formulated by using the
     (link to align_reads_to_fragments.py and calculate_fragment_depth.py)
     (have these stored in the repo somewhere and give tanoa another call which will call them both???)
 
-tanoa_call_peaks:    
-
+tanoa_call_peaks:            
             tanoa_call_peaks --depth-file ~/fragments_depths.tsv --outputdir ~/outputdirectory
+
             and
+
             tanoa_call_peaks --depth-file ~/fragments_depths.tsv --outputdir ~/outputdirectory --write-depths
 
