@@ -11,3 +11,6 @@ Tanoa only uses default Python libraries and does not require any other librarie
 
 After those steps, tanoa can be run by using the generate peaks command, or the tanoa call peaks command. 
 (highlight and hyper-link those)
+
+Tutorials (link)
+Home(link)

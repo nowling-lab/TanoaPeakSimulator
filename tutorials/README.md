@@ -15,3 +15,5 @@ Documentation:
     Algorithm
 
 Tanoa's strengths and weakness are discussed along with the algorithm in that document.
+
+Home(link)

@@ -25,3 +25,5 @@ is a table of what each command does:
 | --sequence-file | A .fasta file with nucleotide data from DNA sequencing. This is where the enhancer regions will be chosen from |
 | --outputdir | This is the directory files will be written to from the output of generating peaks | 
 
+Tutorials (link)
+Home(link)
