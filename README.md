@@ -9,9 +9,9 @@ of potential peaks to then be filtered through.
 
 Tutorials and installation guides 
 
-   1. [Installing Tanoa](../blob/dev/tutorials/installing-tanoa.md)
-   2. [Tanoa call peaks](../blob/dev/tutorials/call-peaks.md)
-   3. [Tanoa generate peaks](../blob/dev/tutorials/generate-peaks.md)
+   1. [Installing Tanoa](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/installing-tanoa.md)
+   2. [Tanoa call peaks](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/call-peaks.md)
+   3. [Tanoa generate peaks](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/generate-peaks.md)
 
 
 Quick Start Guide
@@ -41,5 +41,5 @@ Quick Start Guide
 
 ---
 
-Note: In depth Tanoa notes on the processes of what tanoa does and why can be found here, in the [docs folder](../blob/dev/docs/algorithm.md),
-    or in the respective guides for [call peaks](../blob/dev/tutorials/call-peaks.md) or [generate peaks](../blob/dev/tutorials/generate-peaks.md)
+Note: In depth Tanoa notes on the processes of what tanoa does and why can be found here, in the [Algorithm discussion file](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/docs/algorithm.md),
+    or in the respective guides for [call peaks](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/call-peaks.md) or [generate peaks](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/generate-peaks.md)
