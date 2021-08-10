@@ -1,18 +1,19 @@
 # Tanoa Peak Simulator And Caller
 
----
+
 Tanoa is the first step of a two step process of peak calling. Tanoa's role in this is to generate a file
 of potential peaks to then be filtered through.
+
 ---
 # Documentation
----
+
 Tutorials and installation guides 
 
     1. [Installing Tanoa](../blob/dev/tutorials/installing-tanoa.md)
     2. [Tanoa call peaks](../blob/dev/tutorials/call-peaks.md)
     3. [Tanoa generate peaks](../blob/dev/tutorials/generate-peaks.md)
 
----
+
 Quick Start Guide
 ---
    It is recommended to run Tanoa in a virtual python environment. Information on how to do that is [here](https://docs.python.org/3/tutorial/venv.html "https://docs.python.org/3/tutorial/venv.html")
