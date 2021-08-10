@@ -6,9 +6,9 @@ will discuss how Tanoa does this, it's strengths and weaknesses and how to use T
 
 Usage:
 
-   1. [Installing Tanoa](../blob/dev/tutorials/installing-tanoa.md)
-   2. [Tanoa call peaks](../blob/dev/tutorials/call-peaks.md)
-   3. [Tanoa generate peaks](../blob/dev/tutorials/generate-peaks.md)
+   1. [Installing Tanoa](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/installing-tanoa.md)
+   2. [Tanoa call peaks](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/call-peaks.md)
+   3. [Tanoa generate peaks](https://github.com/nowling-lab/TanoaPeakSimulator/blob/dev/tutorials/generate-peaks.md)
 
 Documentation:
 
