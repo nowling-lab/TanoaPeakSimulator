@@ -1,0 +1,44 @@
+import argparse
+import os
+
+from caller import read_and_call
+
+def do_call_peaks(args):
+    """
+    Checks the arguments and calls the calls peaks method within the caller directory
+    :params args: the arguments given from argparse, depth-file and outputdir
+    """
+    if not os.path.exists(args.outputdir):
+      os.makedirs(args.outputdir)
+
+    if args.depth_file is None:
+        print("Path specified to depth file is invalid")
+        return
+    read_and_call(args.depth_file, args.outputdir, args.write_depths)
+
+def parseargs():
+    """
+    generates and returns a namespace for the argument parser
+    """
+    parser = argparse.ArgumentParser(description="Caller")
+
+    parser.add_argument("--depth-file",
+                        type=str,
+                        required=True,
+                        help="Depth File with in chromosome,position,reads format")
+
+    parser.add_argument("--outputdir",
+                        type=str,
+                        required=True,
+                        help="Output file directory")
+
+    parser.add_argument("--write-depths",
+                        required=False,
+                        action = 'store_true',
+                        help="Prints the depth file after compression for troubleshooting or curiosity when included")
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parseargs()
+    do_call_peaks(args)

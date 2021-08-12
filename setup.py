@@ -8,6 +8,8 @@ setup(
     author='John Peters',
     author_email='John.Geraldo.Peters@gmail.com',
     license='Apache-2.0',
-    packages=['TanoaPeakSimulator'],
-    zip_safe=False
+    packages=['tanoa', 'caller'],
+    zip_safe=False,
+    python_requires=">=3.6",
+    scripts=["bin/tanoa_generate_peaks", "bin/tanoa_call_peaks"]
 )
