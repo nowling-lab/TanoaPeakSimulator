@@ -31,7 +31,7 @@ def read_and_call(file_name, outputdir, write_depths):
                 print("Compressing " + chromosome)
                 compressed_depths = compress(depths) #Compress the depths to make later algorithms work better
                 depths = {}                           #and faster
-                prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output)
+                process_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output)
                 #####
                 print("Reading in ", ch)
                 chromosome = ch
@@ -39,14 +39,14 @@ def read_and_call(file_name, outputdir, write_depths):
         print("Compressing " + chromosome)
         compressed_depths = compress(depths) #Compress the depths to make later algorithms work better
         depths = {} 
-        prossess_and_write_peaks(chromosome, depths, output_file, write_depths, compressed_depths_output)
+        process_and_write_peaks(chromosome, depths, output_file, write_depths, compressed_depths_output)
         #This gets the last chromosome in the file 
 
     output_file.close
     if write_depths:
         compressed_depths_output.close
 
-def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output):
+def process_and_write_peaks(chromosome, compressed_depths, output_file, write_depths, compressed_depths_output):
     """High level method for grouping together the method calls for calling and writing peaks
 
     Args:
@@ -57,12 +57,14 @@ def prossess_and_write_peaks(chromosome, compressed_depths, output_file, write_d
         compressed_depths_output (File): File to output if the option of writing compressed depths was given
     """
     print("Calling peaks")
-    #smooth_compressed(compressed_depths, 2)
-    peak_list = find_maximums(compressed_depths) #calls peaks
+    smoothed_compressed = smooth_compressed(compressed_depths, 1, False)
+    peak_list = find_maximums(smoothed_compressed) #calls peaks
+    smoothed_compressed = smooth_compressed(smoothed_compressed, 1, True) 
     print("Cleaning peaks")
-    smooth_compressed(compressed_depths, 2) 
-    peak_list = clean_peaks(peak_list, compressed_depths)
+    peak_list = clean_peaks(peak_list, smoothed_compressed, compressed_depths)
+    print("Connecting nearby peaks")
     peak_list = connect_peaks(peak_list, compressed_depths)
+    print("Writing to file")
     write_peaks_to_file(peak_list, output_file, chromosome) #writes them
     if write_depths:
         write_depths_to_file(compressed_depths_output, chromosome, compressed_depths)
@@ -111,9 +113,8 @@ def smooth_compressed(compressed_depths, window, to_round):
         dict: A smooth compressed dictionary of position_start, position_end : read_depth format
     """
     half_window = window
-def smooth_compressed(compressed_depths, window):
-    half_window = window//2
     keys = list(compressed_depths.keys())
+    new_compressed = {}
     for index, key in enumerate(keys):
         array_to_avg = []
         if index >= half_window:
@@ -130,8 +131,13 @@ def smooth_compressed(compressed_depths, window):
             for x in range(index, len(keys)):
                 array_to_avg.append(compressed_depths[keys[x]])
         
-        average = sum(array_to_avg)/len(array_to_avg)
-        compressed_depths[key] = average
+        if to_round:
+            average = sum(array_to_avg)/len(array_to_avg)
+            average = round(average)
+        else:
+            average = sum(array_to_avg)/len(array_to_avg)
+        new_compressed[key] = average
+    return new_compressed
     
     
                 
@@ -156,7 +162,17 @@ def connect_peaks(peak_list, compressed_depths):
             search_start = compressed_index
             compressed_index_next = find_in_compressed(next_peak_start, compressed_depths, search_start)
 
-            if compressed_index_next - compressed_index <= 2:
+            distance_between_peak_ends = compressed_index_next - compressed_index
+            current_peak_width = find_peak_width(peak, compressed_depths)
+            next_peak_width = find_peak_width(peak_list[index + 1], compressed_depths)
+
+            too_wide = False
+            if current_peak_width and next_peak_width > 900:
+                too_wide = True
+            
+            valid_distance = 0 < distance_between_peak_ends <= 2
+
+            if valid_distance and not too_wide:
                 if connect_peaks:
                     new_peak = new_peak_list[-1][0], peak_list[index + 1][1]
                     new_peak_list.pop()
@@ -166,16 +182,45 @@ def connect_peaks(peak_list, compressed_depths):
                     new_peak_list.append(new_peak)
                 connect_peaks = True
             else:
+                connect_peaks = False
                 if len(new_peak_list) >= 1 and check_overlap(peak, new_peak_list[-1]) != 0:
                     new_peak_list.append(peak)
-                    connect_peaks = False
                 elif len(new_peak_list) == 0:
                     new_peak_list.append(peak)
+                elif check_overlap(peak, new_peak_list[-1]) == 0:
+                    if peak[0] == new_peak_list[-1][1]:
+                        new_peak_list.append(peak)
+                else:
+                    print(peak, "?")
 
     if not connect_peaks:
         new_peak_list.append(peak_list[-1])
     return new_peak_list
-            
+
+def find_max_in_peak(peak, compressed_depths):
+    keys = list(compressed_depths.keys())
+
+    compressed_index = find_in_compressed(peak[0], compressed_depths, 0)
+    compressed_index_end = find_in_compressed(peak[1], compressed_depths, compressed_index)
+
+    peak_arr = []
+    for x in range(compressed_index, compressed_index_end + 1):
+        peak_arr.append(compressed_depths[keys[x]])
+    
+    return max(peak_arr)
+    
+
+def find_peak_width(peak, compressed_depths):
+    keys = list(compressed_depths.keys())
+    
+    compressed_index = find_in_compressed(peak[0], compressed_depths, 0)
+    compressed_index_end = find_in_compressed(peak[1], compressed_depths, compressed_index)
+
+    start = keys[compressed_index]
+    end = keys[compressed_index_end]
+
+    return end[1] - start[0]
+
 def find_in_compressed(peak_start, compressed_depths, search_start_index):
     """Finds the location of the start of a given peak in the compressed depth file. This method also can be called multiple times in a row, with an increasing search start index to reduce runtime of this method
 
@@ -194,7 +239,7 @@ def find_in_compressed(peak_start, compressed_depths, search_start_index):
             return index
     return -1
 
-def clean_peaks(peak_list, compressed_depths):
+def clean_peaks(peak_list, smoothed_compressed, compressed_depths):
     """Removes, extends and registers new peaks for all peaks
 
     Args:
@@ -206,14 +251,11 @@ def clean_peaks(peak_list, compressed_depths):
     keys = list(compressed_depths.keys())
     new_peaks = []
     start_index = 0
-    for index, peak in enumerate(peak_list):
-        if peak not in peak_black_dict:
-            start_index, background_index_left, background_index_right = get_background(peak, compressed_depths, keys, start_index)
-            if keys[start_index] == keys[background_index_right] and keys[background_index_left]:
-                new_peaks.append(peak) #Deprecated? I think this will end up never getting called when I fix things
-            else:
-                temp_peak = register_new_peak(background_index_left, background_index_right, peak_list, index, keys, peak_black_dict, compressed_depths)
-                new_peaks.append(temp_peak)
+
+    for peak in peak_list:
+        start_index, background_index_left, background_index_right = get_background(peak, compressed_depths, smoothed_compressed, keys, start_index)
+        temp_peak = register_new_peak(background_index_left, background_index_right, keys)
+        new_peaks.append(temp_peak)
 
     return new_peaks
 
@@ -228,49 +270,11 @@ def register_new_peak(background_index_left, background_index_right, keys):
     Returns:
         str: A peak in start - end format that is the result of registration
     """
-    # Get original peak, left step and right step
-    left_end = keys[background_index_left]
-    right_end = keys[background_index_right]
+    if background_index_right - background_index_left >= 5:
+        peak = keys[background_index_left + 1][0], keys[background_index_right - 1][1]
+    else:
+        peak = keys[background_index_left][0], keys[background_index_right][1]
 
-    # combine all peaks within the boundary and blacklist necessary peaks
-    # get furthest left peak
-    found_left = False
-    index_copy = peak_index
-    while not found_left:
-        compare = compare_peaks(peak_list[index_copy], left_end)
-        if compare == -1:
-            peak_black_dict[peak_list[index_copy]] = True
-            index_copy -= 1
-            if index_copy <= 0:
-                break
-        elif compare == 0:
-            break
-        else:
-            index_copy += 1
-            found_left = True
-
-    # get furthest right peak... Leave these up here for blacklisting things... Get rid of extranious soon^tm
-    found_right = False
-    index_copy = peak_index
-    while not found_right:
-        compare = compare_peaks(peak_list[index_copy], right_end)
-        if compare == -1:
-            peak_black_dict[peak_list[index_copy]] = True
-            index_copy += 1
-            if index_copy == len(peak_list):
-                break
-        elif compare == 0:
-            break
-        else:
-            index_copy -= 1
-            found_right = True
-
-    # use the found variables to combine and make a new peak
-
-    peak = keys[background_index_left][0], keys[background_index_right][1]
-
-    # return new combined peak if applicible
-    peak_black_dict[peak_list[peak_index]] = True
     return peak
 
 def compare_peaks(peak1, peak2):
@@ -313,12 +317,12 @@ def check_overlap(peak1, peak2):
     else:
         return -1
 
-def get_background(peak, compressed_depths, keys, start_index):
+def get_background(peak, compressed_depths, smoothed_compressed, keys, start_index):
     """Finds the index of a given peak within the compressed depths file, finds the background left and right
         of a given peak
 
     Args:
-        peak (str): The peak which the finding background algroithm is centered on
+        peak (str): The peak which the finding background algorithm is centered on
         compressed_depths (Dictionary): a position_start, position_end : read_depth formated dictionary of depths 
         keys (List): The keys for the compressed depths dictionary
         start_index (int): Index which to start searching for a peak within the keys list from, given from the previous found peak's index
@@ -326,6 +330,8 @@ def get_background(peak, compressed_depths, keys, start_index):
     Returns:
         [type]: [description]
     """
+    depths_compressed = smoothed_compressed
+
     peak_index = keys.index(peak, start_index)
     temp_index_left = peak_index
     temp_index_right = peak_index
@@ -334,26 +340,40 @@ def get_background(peak, compressed_depths, keys, start_index):
     # Find peak in compressed_depths file
     # Find Left background
     found_background = False
+    background = 5
+
+    depth = compressed_depths[keys[peak_index]]
+    if depth < 15:
+        depths_compressed = compressed_depths
+    elif depth >= 15:
+        background = 8
+        depths_compressed = compressed_depths
+    elif depth >= 50:
+        background = 8
+        
     while not found_background:
-        depth = compressed_depths[keys[temp_index_left]]
-        if depth <= 4:
+        depth = depths_compressed[keys[temp_index_left]]
+        if depth <= background:
             found_background = True
             background_index_left = temp_index_left
         elif temp_index_left > 0:
             temp_index_left -= 1
         else:
             background_index_left = 0
+            found_background = True
+
     # Find Right Background
     found_background = False
     while not found_background:
-        depth = compressed_depths[keys[temp_index_right]]
-        if depth <= 4: #TODO: CHECK BACKGROUND SIZE. 3 GIVES LESS PEAKS THAN 4. MUST CHECK ACCURACY AGAIN
+        depth = depths_compressed[keys[temp_index_right]]
+        if depth <= background: 
             found_background = True
             background_index_right = temp_index_right
-        elif temp_index_right < len(compressed_depths):
+        elif temp_index_right < len(depths_compressed):
             temp_index_right += 1
         else:
-            background_index_right = len(compressed_depths) - 1
+            background_index_right = len(depths_compressed) - 1
+            found_background = True
 
     return peak_index, background_index_left, background_index_right
 
@@ -379,7 +399,7 @@ def write_depths_to_file(output, chromosome, compressed_depths):
     """
     keys = list(compressed_depths.keys())
     for key in keys:
-        output.write(chromosome + " " + str(key) + " " + str(compressed_depths[key]) + "\n")
+        output.write(chromosome + " " + str(key) + " " + str(round(compressed_depths[key], 3)) + "\n")
         
 
 def find_maximums(compressed_depths):
@@ -401,6 +421,7 @@ def find_maximums(compressed_depths):
             if is_max: #Checks those for being a maximum. What if I did no checking?
                 local_maximums.append(keys[index]) #TODO: Rename stuff
         prev_depth = current_depth
+
     return local_maximums
     
 def verify_max(compressed_depths, keys, steps, peak_key, key_index):
@@ -420,8 +441,8 @@ def verify_max(compressed_depths, keys, steps, peak_key, key_index):
     return check_max(window_keys, compressed_depths, peak_key)
 
 def check_max(window_keys, compressed_depths, peak_key):
-    """Given a list of keys, verifies that the given point(peak_key) corrisponds with the maximum
-    value present in depths which those keys corrispond to
+    """Given a list of keys, verifies that the given point(peak_key) corresponds with the maximum
+    value present in depths which those keys correspond to
 
     Args:
         window_keys (List): A list of keys x steps away from a given peak
